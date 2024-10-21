@@ -19,6 +19,8 @@
 // Keyword helper
 kw<term> { @specialize[@name=Keyword]<Word, term> }
 
+op<sym> { @specialize[@name=Operator]<Operator, sym> }
+
 Literal {
   @specialize[@name=Null]<Word, "NULL"> |
   @specialize[@name=Boolean]<Word, "TRUE" | "FALSE"> |
@@ -45,13 +47,13 @@ UnaryExpression { !neg unaryOp ~expression }
 
 binaryOp {
   !muldiv (
-    ArithOp{"*" | "/"} |
-    @specialize[@name=ArithOp]<Word, "DIV" | "MOD">
+    op<"*" | "/"> |
+    @specialize[@name=Operator]<Word, "DIV" | "MOD">
   ) |
-  !addsub ArithOp{"+" | "-" | "&"} |
-  !comparison CompOp{"<" | "<=" | ">" | ">="} ~expression |
-  !equality CompOp{"=" | "<>" | "!=" | "=="} ~expression |
-  !logical @specialize[@name=LogicOp]<Word, "AND" | "OR">
+  !addsub op<"+" | "-" | "&"> |
+  !comparison op<"<" | "<=" | ">" | ">="> ~expression |
+  !equality op<"=" | "<>" | "!=" | "=="> ~expression |
+  !logical @specialize[@name=Operator]<Word, "AND" | "OR">
 }
 
 BinaryExpression { ~expression binaryOp ~expression }
@@ -86,14 +88,14 @@ LocalParam { kw<"BYREF" | "BYVAL"> Word ":" Datatype }
 
 ExpressionStatement { ~expression }
 
-AssignStatement { ~expression AssignOp{"<-" | "<--"} ~expression }
+AssignStatement { ~expression op<"<-" | "<--"> ~expression }
 
-ConstantStatement { kw<"CONSTANT"> Word "=" Literal }
+ConstantStatement { kw<"CONSTANT"> Word op<"="> Literal }
 
 DeclareStatement { kw<"DECLARE"> GlobalParam }
 
 TypeStatement {
-  kw<"TYPE"> Customtype "=" (
+  kw<"TYPE"> Customtype op<"="> (
     EnumExpression{ "(" Literal ("," Literal)* ")"} |
     PointerExpression{ "^" Datatype } |
     setExpression{ kw<"SET"> kw<"OF"> Datatype }
@@ -138,7 +140,7 @@ CaseStatement {
 }
 
 ForStatement {
-  kw<"FOR">  Word AssignOp{"<-" | "<--"} Range (kw<"STEP"> ~expression)? br
+  kw<"FOR">  Word op<"<-" | "<--"> Range (kw<"STEP"> ~expression)? br
     // TODO: optional indent
     statement+
   kw<"NEXT"> Word
@@ -252,6 +254,14 @@ statement {
   String { '"' !["\n\r]* '"' }
 
   Comment { "//" ![\n\r]* }
+
+  Operator {
+    "+" | "-" | "*" | "/" | "&" | "<-" | "<--" |
+    "<" | "<=" | ">" | ">=" | "=" | "==" |
+    "<>" | "!="
+  }
+
+  @precedence { Comment, Operator }
 
   Word { $[a-zA-Z]$[a-zA-Z_0-9]* }
 

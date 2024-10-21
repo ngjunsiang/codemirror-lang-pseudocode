@@ -19,8 +19,10 @@ export const pscodeLanguage = LRLanguage.define({
         Identifier: t.variableName,
         Keyword: t.keyword,
         Null: t.null,
-        Number: t.number,
+        Float: t.float,
+        Integer: t.integer,
         String: t.string,
+        Operator: t.operator,
         Comment: t.lineComment,
         "( )": t.paren
       })
