@@ -1,8 +1,10 @@
-import {parser} from "./syntax.grammar"
+// https://kubixlezermars.codemirror.net/examples/lang-package/
+
+import {parser} from "./pscode.grammar"
 import {LRLanguage, LanguageSupport, indentNodeProp, foldNodeProp, foldInside, delimitedIndent} from "@codemirror/language"
 import {styleTags, tags as t} from "@lezer/highlight"
 
-export const EXAMPLELanguage = LRLanguage.define({
+export const pscodeLanguage = LRLanguage.define({
   parser: parser.configure({
     props: [
       indentNodeProp.add({
@@ -12,19 +14,23 @@ export const EXAMPLELanguage = LRLanguage.define({
         Application: foldInside
       }),
       styleTags({
-        Identifier: t.variableName,
         Boolean: t.bool,
+        Char: t.character,
+        Identifier: t.variableName,
+        Keyword: t.keyword,
+        Null: t.null,
+        Number: t.number,
         String: t.string,
-        LineComment: t.lineComment,
+        Comment: t.lineComment,
         "( )": t.paren
       })
     ]
   }),
   languageData: {
-    commentTokens: {line: ";"}
+    commentTokens: {line: "//"}
   }
 })
 
-export function EXAMPLE() {
-  return new LanguageSupport(EXAMPLELanguage)
+export function pseudocode() {
+  return new LanguageSupport(pscodeLanguage)
 }

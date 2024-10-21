@@ -1,0 +1,265 @@
+// See https://lezer.codemirror.net/docs/guide/#building-a-grammar,
+// https://lezer.codemirror.net/docs/guide/#writing-a-grammar
+
+// $ lezer-generator src/pscode.grammar -o src/pseudocode.mjs
+
+@precedence {
+  neg @right,
+  muldiv @left,
+  addsub @left,
+  comparison @left,
+  equality @left,
+  logical @left
+}
+
+@top Program { statement* }
+
+@skip { space | Comment }
+
+// Keyword helper
+kw<term> { @specialize[@name=Keyword]<Word, term> }
+
+Literal {
+  @specialize[@name=Null]<Word, "NULL"> |
+  @specialize[@name=Boolean]<Word, "TRUE" | "FALSE"> |
+  number | Char | String
+}
+
+Valuetype {
+  @specialize<Word,
+    "INTEGER" | "REAL" | "CHAR" | "STRING" | "BOOLEAN" | "DATE"
+  >
+}
+
+Customtype { Word }
+
+Datatype { Valuetype | Customtype }
+
+Arraytype { @specialize<Word, "ARRAY"> }
+
+// Date { Integer "/" Integer "/" Integer }
+
+unaryOp { NegOp{"-"} | @specialize[@name=LogicOp]<Word, "NOT"> }
+
+UnaryExpression { !neg unaryOp ~expression }
+
+binaryOp {
+  !muldiv (
+    ArithOp{"*" | "/"} |
+    @specialize[@name=ArithOp]<Word, "DIV" | "MOD">
+  ) |
+  !addsub ArithOp{"+" | "-" | "&"} |
+  !comparison CompOp{"<" | "<=" | ">" | ">="} ~expression |
+  !equality CompOp{"=" | "<>" | "!=" | "=="} ~expression |
+  !logical @specialize[@name=LogicOp]<Word, "AND" | "OR">
+}
+
+BinaryExpression { ~expression binaryOp ~expression }
+
+CallExpression { ~expression "(" (~expression ("," ~expression)* )? ")" }
+
+IndexExpression { ~expression "[" ~expression ("," ~expression)? "]" }
+
+AttrExpression { ~expression "." Word }
+
+NewExpression { kw<"NEW"> CallExpression }
+
+ParenthesizedExpression { "(" (~expression)+ ")" }
+
+expression {
+  Literal | UnaryExpression | BinaryExpression | NewExpression |
+  IndexExpression | AttrExpression | CallExpression |
+  ParenthesizedExpression
+}
+
+// For CASE and FOR statements
+Range { ~expression kw<"TO"> ~expression }
+
+GlobalParam {
+  Word ":"
+    Datatype |
+    Arraytype "[" Integer ":" Integer ("," Integer ":" Integer)? "]"
+  kw<"OF"> Datatype
+}
+
+LocalParam { kw<"BYREF" | "BYVAL"> Word ":" Datatype }
+
+ExpressionStatement { ~expression }
+
+AssignStatement { ~expression AssignOp{"<-" | "<--"} ~expression }
+
+ConstantStatement { kw<"CONSTANT"> Word "=" Literal }
+
+DeclareStatement { kw<"DECLARE"> GlobalParam }
+
+TypeStatement {
+  kw<"TYPE"> Customtype "=" (
+    EnumExpression{ "(" Literal ("," Literal)* ")"} |
+    PointerExpression{ "^" Datatype } |
+    setExpression{ kw<"SET"> kw<"OF"> Datatype }
+  )
+}
+
+CompositeTypeStatement {
+  kw<"TYPE"> Customtype br
+    // TODO: optional indent
+    (DeclareStatement br*)*
+  kw<"ENDTYPE">
+}
+
+// For sets
+DefineStatement {
+  kw<"DEFINE"> Word
+  "(" ( ~expression ("," ~expression)* )? ")" ":" Customtype
+}
+
+InputStatement { kw<"INPUT"> ~expression }
+
+OutputStatement { kw<"OUTPUT"> ~expression ("," ~expression)+ }
+
+IfStatement {
+  kw<"IF"> ~expression kw<"THEN"> br?
+    // TODO: optional indent
+    statement+
+  (
+    kw<"ELSE"> br?
+      // TODO: optional indent
+      statement+
+  )*
+  kw<"ENDIF">
+}
+
+CaseStatement {
+  kw<"CASE"> kw<"OF"> Word br
+    // TODO: optional indent
+    ( Range | ~expression ":" statement+ )+
+    ( kw<"OTHERWISE"> statement+ )?
+  kw<"ENDCASE">
+}
+
+ForStatement {
+  kw<"FOR">  Word AssignOp{"<-" | "<--"} Range (kw<"STEP"> ~expression)? br
+    // TODO: optional indent
+    statement+
+  kw<"NEXT"> Word
+}
+
+RepeatStatement {
+  kw<"REPEAT"> br
+    statement+
+  kw<"UNTIL"> ~expression
+}
+
+WhileStatement {
+  kw<"WHILE"> ~expression br
+    statement+
+  kw<"ENDWHILE">
+}
+
+zeroOrMoreParams { "(" ( LocalParam ("," LocalParam)* )? ")" }
+
+ProcedureStatement {
+  kw<"PROCEDURE"> Word zeroOrMoreParams br
+    statement+
+  kw<"ENDPROCEDURE">
+}
+
+// Procedure calls
+CallStatement {
+  kw<"CALL"> CallExpression
+}
+
+FunctionStatement {
+  kw<"FUNCTION"> Word zeroOrMoreParams kw<"RETURNS"> Datatype br
+    statement+
+  kw<"ENDFUNCTION">
+}
+
+ReturnStatement { kw<"RETURN"> ~expression }
+
+fileIdentifier { ~expression }
+
+OpenfileStatement {
+  kw<"OPENFILE"> ~expression kw<"FOR"> kw<"READ" | "WRITE" | "APPEND" | "RANDOM">
+}
+
+ReadfileStatement {
+  kw<"READFILE"> fileIdentifier "," ~expression
+}
+
+WritefileStatement {
+  kw<"WRITEFILE"> fileIdentifier "," ~expression
+}
+
+ClosefileStatement {
+  kw<"CLOSEFILE"> fileIdentifier
+}
+
+SeekStatement {
+  kw<"SEEK"> fileIdentifier "," ~expression
+}
+
+GetrecordStatement {
+  kw<"GETRECORD"> fileIdentifier "," ~expression
+}
+
+PutrecordStatement {
+  kw<"PUTRECORD"> fileIdentifier "," ~expression
+}
+
+access { kw<"PUBLIC" | "PRIVATE"> }
+
+// For property declarations in a class
+AttributeStatement { access? GlobalParam }
+
+// For method (procedure / function) declarations in a class
+MethodStatement { access? ( ProcedureStatement | FunctionStatement ) }
+
+propertyStatement {
+  AttributeStatement | MethodStatement
+}
+
+ClassStatement {
+  kw<"CLASS"> Word ( kw<"INHERITS"> Word )? br
+    propertyStatement*
+  kw<"ENDCLASS">
+}
+
+statement {
+  (
+    AssignStatement | ConstantStatement | DeclareStatement |
+    TypeStatement | CompositeTypeStatement | DefineStatement |
+    InputStatement | OutputStatement | IfStatement | CaseStatement |
+    ForStatement | RepeatStatement | WhileStatement |
+    ProcedureStatement | CallStatement | FunctionStatement | ReturnStatement |
+    OpenfileStatement | ReadfileStatement | WritefileStatement |
+    ClosefileStatement | SeekStatement | GetrecordStatement |
+    PutrecordStatement | ClassStatement
+  ) br // Statements are terminated with line break
+}
+
+@tokens {
+  br { $[\n\r] }
+
+  Integer { $[0-9]+ }
+
+  Float { Integer "." Integer }
+
+  number { Float | Integer }
+
+  Char { "'" !['\n\r] "'" }
+
+  String { '"' !["\n\r]* '"' }
+
+  Comment { "//" ![\n\r]* }
+
+  Word { $[a-zA-Z]$[a-zA-Z_0-9]* }
+
+  space { $[ \t]+ }
+
+  // TODO: define indentation
+
+  "(" ")"
+}
+
+@detectDelim
