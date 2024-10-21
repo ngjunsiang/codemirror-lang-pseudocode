@@ -1,0 +1,25 @@
+FUNCTION Compare(String1, String2 : STRING) RETURNS BOOLEAN
+    DECLARE x, y, Len1, Len2 : INTEGER
+    DECLARE RetFlag : BOOLEAN
+    DECLARE NextChar : CHAR
+    DECLARE New : STRING
+    Len1 <- LENGTH(String1)
+    RetFlag <- TRUE
+    FOR x <- 1 TO Len1                              // for each char in String1
+        Len2 <- LENGTH(String2)
+        NextChar <- MID(String1, x, 1)              // get NextChar from String1
+        New <- ""
+        FOR y <- 1 TO Len2 // for each char in String2
+            IF NextChar <> MID(String2, y, 1)       // no match
+                THEN
+                    New <- New & MID(String2, y, 1) // save this char from String2
+            ENDIF
+        ENDFOR
+        String2 <- New                              // replace String2 with New
+    ENDFOR
+    IF LENGTH(String2) <> 0                         // anything left in String2?
+        THEN
+            RetFlag <- FALSE
+    ENDIF
+    RETURN RetFlag
+ENDFUNCTION

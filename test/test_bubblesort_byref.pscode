@@ -1,0 +1,39 @@
+DECLARE Length : INTEGER
+DECLARE Data : ARRAY[1:10] OF INTEGER
+DECLARE i : INTEGER
+
+Length <- 10
+
+PROCEDURE BubbleSort(BYREF Data: ARRAY[1:10] OF INTEGER, Length: INTEGER)
+    DECLARE i : INTEGER
+    DECLARE j : INTEGER
+    DECLARE Temp : INTEGER
+
+    FOR i <- 1 TO Length - 1
+        FOR j <- 1 TO Length - i
+            IF Data[j] > Data[j + 1]
+              THEN
+                Temp <- Data[j]
+                Data[j] <- Data[j + 1]
+                Data[j + 1] <- Temp
+            ENDIF
+        ENDFOR
+    ENDFOR
+ENDPROCEDURE
+
+Data[1] <- 7
+Data[2] <- 9
+Data[3] <- 4
+Data[4] <- 1
+Data[5] <- 2
+Data[6] <- 3
+Data[7] <- 5
+Data[8] <- 10
+Data[9] <- 6
+Data[10] <- 8
+
+CALL BubbleSort(Data, Length)
+
+FOR i <- 1 TO 10
+    OUTPUT Data[i]
+ENDFOR

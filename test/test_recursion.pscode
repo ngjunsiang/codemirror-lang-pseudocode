@@ -1,0 +1,9 @@
+PROCEDURE CountDown(Num : INTEGER)
+    OUTPUT Num
+    IF Num > 0
+      THEN
+        CALL CountDown(Num - 1)
+    ENDIF
+ENDPROCEDURE
+
+CALL CountDown(10)

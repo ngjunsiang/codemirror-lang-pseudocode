@@ -1,0 +1,3 @@
+OPENFILE "testfile.txt" FOR READ
+OUTPUT EOF("testfile.txt")
+CLOSEFILE "testfile.txt"

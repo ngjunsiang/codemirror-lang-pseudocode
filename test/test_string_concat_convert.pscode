@@ -1,0 +1,1 @@
+OUTPUT "A: " & INTTOSTRING(1) & ", B: " & INTTOSTRING(999)
