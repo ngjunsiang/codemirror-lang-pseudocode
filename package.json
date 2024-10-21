@@ -1,7 +1,7 @@
 {
-  "name": "codemirror-lang-EXAMPLE",
+  "name": "codemirror-lang-pseudocode",
   "version": "0.1.0",
-  "description": "EXAMPLE language support for CodeMirror",
+  "description": "Pseudocode language support for the CodeMirror code editor (Cambridge International AS & A Level, Computer Science 9618)",
   "scripts": {
     "test": "mocha test/test.js",
     "prepare": "rollup -c"
@@ -23,10 +23,14 @@
   "devDependencies": {
     "@lezer/generator": "^1.0.0",
     "mocha": "^9.0.1",
-    "rollup": "^2.60.2",
+    "rollup": "^2.79.2",
     "rollup-plugin-dts": "^4.0.1",
     "rollup-plugin-ts": "^3.0.2",
     "typescript": "^4.3.4"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ngjunsiang/codemirror-lang-pseudocode"
+  }
 }
